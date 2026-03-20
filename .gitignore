@@ -1,0 +1,17 @@
+# Unity默认忽略文件
+/Library/
+/Temp/
+/Obj/
+/Build/
+/Builds/
+/Logs/
+/AssetStoreTools*
+/Packages/
+/ProjectSettings/ProjectVersion.txt
+/ProjectSettings/QualitySettings.asset
+/ProjectSettings/TagManager.asset
+/ProjectSettings/InputManager.asset
+# 自定义忽略（可选）
+*.zip
+*.rar
+*.exe
