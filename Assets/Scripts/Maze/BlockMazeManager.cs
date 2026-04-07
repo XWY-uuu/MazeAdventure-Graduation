@@ -1,10 +1,14 @@
 using UnityEngine;
+using System; // 必须加这个命名空间，用于委托
 
 public class BlockMazeManager : MonoBehaviour
 {
     public BlockMazeGenerator mazeGenerator;
     public BlockMazeDecorator mazeDecorator;
     public bool generateOnStart = true; // 是否在游戏启动时自动生成迷宫
+
+    // ========== 新增：迷宫生成完成的事件委托 ==========
+    public event Action OnMazeGenerated;
 
     private void Start()
     {
@@ -19,6 +23,8 @@ public class BlockMazeManager : MonoBehaviour
     {
         mazeGenerator.GenerateMaze();
         mazeDecorator.DecorateMaze();
+        // ========== 新增：触发事件，通知敌人刷新、导航烘焙 ==========
+        OnMazeGenerated?.Invoke();
         Debug.Log("方块迷宫生成和装饰完成！");
     }
 
@@ -39,13 +45,6 @@ public class BlockMazeManager : MonoBehaviour
     /// </summary>
     public void RestartGameWithNewMaze()
     {
-        // 清除现有玩家
-        GameObject existingPlayer = GameObject.FindGameObjectWithTag("Player");
-        if (existingPlayer != null)
-        {
-            Destroy(existingPlayer);
-        }
-        // 重新生成迷宫
         GenerateCompleteMaze();
     }
 }

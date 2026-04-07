@@ -7,24 +7,34 @@ public class BlockMazeDecorator : MonoBehaviour
     public GameObject groundPrefab;
     public GameObject wallPrefab;
     public GameObject resourcePointPrefab;
-    public GameObject enemySpawnPointPrefab;
     public GameObject portalPrefab;
     public int resourcePointCount = 15;
-    public int enemySpawnPointCount = 10;
+
+    [Header("敌人生成设置")]
+    [Tooltip("每多少格房间面积生成1个敌人（例：100=每100格面积1个敌人）")]
+    public int enemyPerGridArea = 100;
+    [Tooltip("敌人数量随机波动范围（例：2=最终数量±2）")]
+    public int enemyRandomOffset = 2;
+    [Tooltip("单个房间最大敌人数量")]
+    public int maxEnemyPerRoom = 10;
+    [Tooltip("单个房间最小敌人数量")]
+    public int minEnemyPerRoom = 1;
 
     [Header("玩家出生点设置")]
-    [Tooltip("玩家预制体，拖入Inspector面板")]
+    [Tooltip("玩家预制体（仅首次生成无玩家时使用）")]
     public GameObject playerPrefab;
     [Tooltip("玩家出生高度偏移，避免卡入地面")]
     public Vector3 playerSpawnOffset = new Vector3(0, 1f, 0);
-    [Tooltip("出生点与传送门的最小距离（网格格数）")]
-    public int minDistanceToPortal = 15;
-    [Tooltip("出生点与敌人刷新点的最小距离（网格格数）")]
-    public int minDistanceToEnemy = 8;
-    // 对外暴露的玩家出生点世界坐标，方便其他脚本（如关卡管理、背包系统）调用
+    // 对外暴露的玩家出生点世界坐标，方便其他脚本调用
     public Vector3 PlayerSpawnWorldPosition { get; private set; }
     // 对外暴露的玩家出生点网格坐标，方便AI、寻路系统调用
     public Vector2Int PlayerSpawnGridPosition { get; private set; }
+    // ========== 新增：对外暴露传送门网格坐标 ==========
+    public Vector2Int PortalGridPosition { get; private set; }
+
+    // 存储玩家和传送门所在的房间
+    private Room _playerRoom;
+    private Room _portalRoom;
 
     public void DecorateMaze()
     {
@@ -38,37 +48,81 @@ public class BlockMazeDecorator : MonoBehaviour
         int width = mazeGenerator.mazeWidth;
         int height = mazeGenerator.mazeHeight;
 
-        // ====== 优化1：生成单个大地面Cube ======
+        // 生成单个大地面Cube
         if (groundPrefab != null)
         {
-            // 生成单个地面Cube，覆盖整个迷宫区域
             GameObject bigGround = Instantiate(groundPrefab, transform);
-            // 计算地面位置：Cube锚点在中心，所以x = 宽度/2 - 0.5，z = 高度/2 - 0.5，y=0.5（让地面表面处于y=0的位置）
-            bigGround.transform.position = new Vector3((width - 1) / 2f, 0.5f, (height - 1) / 2f);
-            // 计算缩放：宽度=迷宫宽度，高度=1（原有地面高度），深度=迷宫高度
+            bigGround.transform.position = new Vector3((width - 1) / 2f, -0.5f, (height - 1) / 2f);
             bigGround.transform.localScale = new Vector3(width, 1f, height);
-            // 可选：给大地面命名，方便调试
             bigGround.name = "BigGround";
         }
 
-        // ====== 优化2：合并生成墙壁 ======
+        // 合并生成墙壁
         SpawnMergedWalls(grid, width, height);
 
-        // 以下原有逻辑（传送门、玩家、敌人、资源点）保持不变
-        Vector2Int portalGridPos = SpawnPortalAndGetPosition(grid, width, height);
-        SpawnPlayerStart(grid, width, height, portalGridPos);
-        SpawnObjects(enemySpawnPointPrefab, enemySpawnPointCount, grid, width, height);
+        // 1. 获取迷宫中最远的两个房间，分别分配给玩家和传送门
+        var (roomA, roomB) = mazeGenerator.GetFarthestRoomPair();
+        _playerRoom = roomA;
+        _portalRoom = roomB;
+
+        // 2. 生成传送门
+        SpawnPortalInFixedRoom();
+        // 3. 生成玩家出生点
+        SpawnPlayerInFixedRoom();
+        // 4. 生成资源点
         SpawnObjects(resourcePointPrefab, resourcePointCount, grid, width, height);
 
-        Debug.Log("迷宫装饰与玩家出生点生成完成！");
+        Debug.Log("迷宫装饰完成！玩家与传送门已分配至最远房间");
     }
 
+    // 生成传送门
+    private void SpawnPortalInFixedRoom()
+    {
+        if (portalPrefab == null)
+        {
+            Debug.LogWarning("未设置传送门预制体");
+            return;
+        }
+
+        PortalGridPosition = _portalRoom.center;
+        Vector3 worldPos = new Vector3(PortalGridPosition.x, 0.5f, PortalGridPosition.y);
+        Instantiate(portalPrefab, worldPos, Quaternion.identity, transform);
+
+        Debug.Log($"传送门已生成在房间中心，网格坐标：{PortalGridPosition}");
+    }
+
+    // 生成/移动玩家
+    private void SpawnPlayerInFixedRoom()
+    {
+        if (playerPrefab == null)
+        {
+            Debug.LogError("未设置玩家预制体！请在Inspector面板拖入Player Prefab");
+            return;
+        }
+
+        PlayerSpawnGridPosition = _playerRoom.center;
+        PlayerSpawnWorldPosition = new Vector3(PlayerSpawnGridPosition.x, 0, PlayerSpawnGridPosition.y) + playerSpawnOffset;
+
+        GameObject existingPlayer = GameObject.FindGameObjectWithTag("Player");
+        if (existingPlayer != null)
+        {
+            existingPlayer.transform.position = PlayerSpawnWorldPosition;
+            existingPlayer.transform.rotation = Quaternion.identity;
+            Debug.Log($"已有玩家已移动到最远房间！网格坐标：{PlayerSpawnGridPosition}");
+        }
+        else
+        {
+            Instantiate(playerPrefab, PlayerSpawnWorldPosition, Quaternion.identity);
+            Debug.Log($"场景中未找到玩家，已在最远房间创建新玩家！");
+        }
+    }
+
+    // 通用生成方法（资源点用）
     private void SpawnObjects(GameObject prefab, int count, bool[,] grid, int width, int height)
     {
         if (prefab == null || count <= 0) return;
 
         List<Vector2Int> groundPositions = new List<Vector2Int>();
-        // 收集所有地面位置
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -82,7 +136,6 @@ public class BlockMazeDecorator : MonoBehaviour
 
         if (groundPositions.Count == 0) return;
 
-        // 随机选择位置生成
         for (int i = 0; i < count; i++)
         {
             if (groundPositions.Count == 0) break;
@@ -90,142 +143,34 @@ public class BlockMazeDecorator : MonoBehaviour
             Vector2Int pos = groundPositions[randomIndex];
             Vector3 worldPos = new Vector3(pos.x, 0.5f, pos.y);
             Instantiate(prefab, worldPos, Quaternion.identity, transform);
-            groundPositions.RemoveAt(randomIndex); // 避免重复生成在同一个位置
+            groundPositions.RemoveAt(randomIndex);
         }
     }
 
-    /// <summary>
-    /// 生成传送门并返回传送门的网格坐标
-    /// </summary>
-    private Vector2Int SpawnPortalAndGetPosition(bool[,] grid, int width, int height)
-    {
-        Vector2Int defaultPortalPos = new Vector2Int(width / 2, height / 2);
-        if (portalPrefab == null)
-        {
-            Debug.LogWarning("未设置传送门预制体");
-            return defaultPortalPos;
-        }
-
-        List<Vector2Int> groundPositions = new List<Vector2Int>();
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                if (grid[x, y])
-                {
-                    groundPositions.Add(new Vector2Int(x, y));
-                }
-            }
-        }
-
-        if (groundPositions.Count == 0)
-        {
-            Debug.LogError("迷宫无有效地面，无法生成传送门");
-            return defaultPortalPos;
-        }
-
-        // 随机选择一个位置生成传送门
-        Vector2Int portalPos = groundPositions[Random.Range(0, groundPositions.Count)];
-        Vector3 worldPos = new Vector3(portalPos.x, 0.5f, portalPos.y);
-        Instantiate(portalPrefab, worldPos, Quaternion.identity, transform);
-
-        return portalPos;
-    }
-
-    /// <summary>
-    /// 生成玩家出生点并实例化玩家
-    /// </summary>
-    /// <param name="grid">迷宫网格数据</param>
-    /// <param name="width">迷宫宽度</param>
-    /// <param name="height">迷宫高度</param>
-    /// <param name="portalPos">已生成的传送门网格坐标</param>
-    private void SpawnPlayerStart(bool[,] grid, int width, int height, Vector2Int portalPos)
-    {
-        // 异常处理：未设置玩家预制体直接返回
-        if (playerPrefab == null)
-        {
-            Debug.LogError("未设置玩家预制体！请在Inspector面板拖入Player Prefab");
-            return;
-        }
-
-        // 1. 收集所有合法的地面网格坐标
-        List<Vector2Int> allGroundPositions = new List<Vector2Int>();
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                if (grid[x, y])
-                {
-                    allGroundPositions.Add(new Vector2Int(x, y));
-                }
-            }
-        }
-
-        // 2. 筛选符合距离要求的安全位置
-        List<Vector2Int> safeSpawnPositions = new List<Vector2Int>();
-        foreach (Vector2Int pos in allGroundPositions)
-        {
-            // 计算与传送门的曼哈顿距离（网格格数），保证玩家不会出生在终点附近
-            int distanceToPortal = Mathf.Abs(pos.x - portalPos.x) + Mathf.Abs(pos.y - portalPos.y);
-            if (distanceToPortal >= minDistanceToPortal)
-            {
-                safeSpawnPositions.Add(pos);
-            }
-        }
-
-        // 异常处理：无安全位置时降级为全地面随机
-        if (safeSpawnPositions.Count == 0)
-        {
-            Debug.LogWarning("未找到符合距离要求的出生点，已降级为全地面随机生成");
-            safeSpawnPositions = allGroundPositions;
-        }
-
-        // 3. 随机选择最终出生点
-        PlayerSpawnGridPosition = safeSpawnPositions[Random.Range(0, safeSpawnPositions.Count)];
-        // 转换为世界坐标，和现有地面/墙壁的坐标体系完全一致
-        PlayerSpawnWorldPosition = new Vector3(PlayerSpawnGridPosition.x, 0, PlayerSpawnGridPosition.y) + playerSpawnOffset;
-
-        // 4. 实例化玩家
-        Instantiate(playerPrefab, PlayerSpawnWorldPosition, Quaternion.identity);
-        Debug.Log($"玩家出生点生成完成！网格坐标：{PlayerSpawnGridPosition}，世界坐标：{PlayerSpawnWorldPosition}");
-    }
-
-    /// <summary>
-    /// 合并相邻的墙壁格子，生成大Cube（横向优先合并）
-    /// </summary>
+    // 合并墙壁
     private void SpawnMergedWalls(bool[,] grid, int width, int height)
     {
         if (wallPrefab == null) return;
-
-        // 标记是否已处理过该墙壁格子
         bool[,] processed = new bool[width, height];
 
-        // 横向合并墙壁（按行遍历）
+        // 横向合并
         for (int y = 0; y < height; y++)
         {
             int x = 0;
             while (x < width)
             {
-                // 找到未处理的墙壁格子
                 if (!grid[x, y] && !processed[x, y])
                 {
-                    // 向后查找连续的墙壁格子
                     int mergeLength = 1;
                     while (x + mergeLength < width && !grid[x + mergeLength, y] && !processed[x + mergeLength, y])
                     {
                         mergeLength++;
                     }
-
-                    // 生成合并后的大墙壁Cube
                     SpawnMergedWallCube(x, y, mergeLength, 1, width, height);
-
-                    // 标记这些格子为已处理
                     for (int i = 0; i < mergeLength; i++)
                     {
                         processed[x + i, y] = true;
                     }
-
-                    // 跳过已处理的格子
                     x += mergeLength;
                 }
                 else
@@ -235,7 +180,7 @@ public class BlockMazeDecorator : MonoBehaviour
             }
         }
 
-        // （可选）纵向合并剩余未处理的墙壁（补充优化）
+        // 纵向合并
         for (int x = 0; x < width; x++)
         {
             int y = 0;
@@ -248,14 +193,11 @@ public class BlockMazeDecorator : MonoBehaviour
                     {
                         mergeHeight++;
                     }
-
                     SpawnMergedWallCube(x, y, 1, mergeHeight, width, height);
-
                     for (int i = 0; i < mergeHeight; i++)
                     {
                         processed[x, y + i] = true;
                     }
-
                     y += mergeHeight;
                 }
                 else
@@ -266,28 +208,14 @@ public class BlockMazeDecorator : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 生成单个合并后的墙壁Cube
-    /// </summary>
-    /// <param name="startX">起始X网格坐标</param>
-    /// <param name="startY">起始Y网格坐标</param>
-    /// <param name="lengthX">X方向合并长度</param>
-    /// <param name="lengthY">Y方向合并长度</param>
-    /// <param name="mazeWidth">迷宫总宽度</param>
-    /// <param name="mazeHeight">迷宫总高度</param>
+    // 生成合并后的墙壁Cube
     private void SpawnMergedWallCube(int startX, int startY, int lengthX, int lengthY, int mazeWidth, int mazeHeight)
     {
-        // 计算大Cube的位置（锚点在中心）
         float posX = startX + (lengthX - 1) / 2f;
         float posZ = startY + (lengthY - 1) / 2f;
+        Vector3 spawnPos = new Vector3(posX, 1f, posZ);
+        Vector3 scale = new Vector3(lengthX, 2f, lengthY);
 
-        //修改：墙壁位置Y=0.5（中心在0.5，缩放Y=1 → 底部0，顶部1）
-        Vector3 spawnPos = new Vector3(posX, 1.5f, posZ);
-
-        // 计算大Cube的缩放
-        Vector3 scale = new Vector3(lengthX, 1f, lengthY); // 高度保持1，和原有墙壁一致
-
-        // 生成合并后的墙壁
         GameObject mergedWall = Instantiate(wallPrefab, spawnPos, Quaternion.identity, transform);
         mergedWall.transform.localScale = scale;
         mergedWall.name = $"MergedWall_{startX}_{startY}_Size{lengthX}x{lengthY}";
