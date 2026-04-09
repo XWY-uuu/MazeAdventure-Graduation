@@ -130,4 +130,5 @@ public class Blackboard
     public bool isAttacking; // 是否正在攻击
     public List<Vector2Int> patrolPath; // 巡逻路径
     public int currentPatrolPointIndex; // 当前巡逻点索引
+    public float baseDamage = 20f; // 敌人基础伤害
 }

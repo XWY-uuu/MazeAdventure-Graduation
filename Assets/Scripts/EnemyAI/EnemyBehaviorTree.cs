@@ -413,25 +413,30 @@ public class EnemyBehaviorTree : BehaviorTree
         public override NodeState Evaluate()
         {
             Blackboard bb = Blackboard;
-
             if (bb == null || bb.player == null || bb.isAttacking)
             {
                 _state = NodeState.Running;
                 return _state;
             }
-
             if (Time.time - _lastAttackTime < _attackCooldown)
             {
                 _state = NodeState.Running;
                 return _state;
             }
 
+            // 核心：真实伤害逻辑
             bb.isAttacking = true;
-            Debug.Log($"【攻击】{bb.self.name} 攻击玩家！");
+            HealthSystem playerHealth = bb.player.GetComponent<HealthSystem>();
+            if (playerHealth != null)
+            {
+                // 可在Blackboard中配置敌人基础伤害，这里默认20点基础伤害
+                float enemyDamage = 20f;
+                playerHealth.TakeDamage(enemyDamage);
+            }
 
+            Debug.Log($"【攻击】{bb.self.name} 攻击玩家！");
             _lastAttackTime = Time.time;
             _enemyTree.Invoke(nameof(_enemyTree.ResetAttackState), 0.5f);
-
             _state = NodeState.Success;
             return _state;
         }

@@ -7,6 +7,9 @@ public class BlockMazeManager : MonoBehaviour
     public BlockMazeDecorator mazeDecorator;
     public bool generateOnStart = true; // 是否在游戏启动时自动生成迷宫
 
+    [Header("关卡管理")]
+    public int currentLevel = 1;
+
     // ========== 新增：迷宫生成完成的事件委托 ==========
     public event Action OnMazeGenerated;
 

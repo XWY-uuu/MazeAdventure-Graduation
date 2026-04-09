@@ -510,6 +510,59 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &843404659
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 843404661}
+  - component: {fileID: 843404660}
+  m_Layer: 0
+  m_Name: ItemManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &843404660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 843404659}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e2d9d7d0989bd147ba320b84ecef21e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  commonWeight: 50
+  uncommonWeight: 30
+  rareWeight: 12
+  epicWeight: 6
+  legendaryWeight: 2
+  meleeDamageBase: {x: 5, y: 15}
+  rangedDamageBase: {x: 8, y: 20}
+  armorDefenseBase: {x: 2, y: 10}
+  healthBonusBase: {x: 10, y: 50}
+--- !u!4 &843404661
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 843404659}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 255, y: 0.52, z: 267}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &921471879
 GameObject:
   m_ObjectHideFlags: 0
@@ -837,6 +890,7 @@ MonoBehaviour:
   mazeGenerator: {fileID: 1540503832}
   mazeDecorator: {fileID: 1540503833}
   generateOnStart: 1
+  currentLevel: 1
 --- !u!114 &1540503832
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1127,6 +1181,68 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1792493169}
   m_CullTransparentMesh: 1
+--- !u!1 &1816811243 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8994692728069683039, guid: c01ebe98f9a1cf44b981beb7bdd7000b, type: 3}
+  m_PrefabInstance: {fileID: 3516766243290120303}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1816811244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1816811243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 363c35e1ab3a0d9499ab23c196ee4449, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseMaxHealth: 100
+  currentHealth: 0
+  maxHealth: 0
+  currentDamage: 0
+  currentAttackSpeed: 0
+  currentCriticalRate: 0
+  currentCriticalMultiplier: 0
+  currentDefense: 0
+--- !u!114 &1816811250
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1816811243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd4a6f53f6f52184c8fc50768f40800f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackPower: 50
+  attackRange: 2
+  attackCooldown: 1
+  criticalRate: 0.2
+  criticalDamageMulti: 2
+  attackElement: 0
+  currentAttackCooldown: 0
+--- !u!114 &1816811251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1816811243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22f61d435d1678b429819ac9b3911e63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  attackCheckPoint: {fileID: 0}
+  attackVFX: {fileID: 0}
+  attackSFX: {fileID: 0}
 --- !u!1 &2064951022
 GameObject:
   m_ObjectHideFlags: 0
@@ -1275,7 +1391,16 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1760203935390309565, guid: c01ebe98f9a1cf44b981beb7bdd7000b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 330585546}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8994692728069683039, guid: c01ebe98f9a1cf44b981beb7bdd7000b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1816811244}
+    - targetCorrespondingSourceObject: {fileID: 8994692728069683039, guid: c01ebe98f9a1cf44b981beb7bdd7000b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1816811251}
+    - targetCorrespondingSourceObject: {fileID: 8994692728069683039, guid: c01ebe98f9a1cf44b981beb7bdd7000b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1816811250}
   m_SourcePrefab: {fileID: 100100000, guid: c01ebe98f9a1cf44b981beb7bdd7000b, type: 3}
 --- !u!1001 &3859114705653611381
 PrefabInstance:
@@ -1542,3 +1667,4 @@ SceneRoots:
   - {fileID: 972239084}
   - {fileID: 26789246}
   - {fileID: 2064951023}
+  - {fileID: 843404661}

@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3826945139095594952}
   - component: {fileID: 8294573832290525153}
   - component: {fileID: -4755809244366464061}
+  - component: {fileID: -904361899935066838}
   m_Layer: 6
   m_Name: Enemy
   m_TagString: Enemy
@@ -153,3 +154,17 @@ MonoBehaviour:
     isAttacking: 0
     patrolPath: []
     currentPatrolPointIndex: 0
+    baseDamage: 20
+--- !u!114 &-904361899935066838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8366540599407532205}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9d8c4678e1c7fa46ab97f1326fa77a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100

@@ -3,13 +3,12 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))] // 强制挂载CharacterController，避免穿模
 public class PlayerController : MonoBehaviour
 {
+    // 原有moveSpeed字段替换为以下内容
     [Header("移动设置")]
-    [Tooltip("基础移动速度（迷宫场景建议8-12）")]
-    public float moveSpeed = 10f;
-    [Tooltip("移动平滑度（0=无平滑，1=瞬间移动，建议0.1）")]
-    public float moveSmoothTime = 0.1f;
-    [Tooltip("重力加速度（默认9.81即可）")]
-    public float gravity = 9.81f;
+    [Tooltip("基础移动速度（迷宫场景建议8-12）")] public float baseMoveSpeed = 10f;
+    [HideInInspector] public float currentMoveSpeed; // 装备系统实时修改
+    [Tooltip("移动平滑度（0=无平滑，1=瞬间移动，建议0.1）")] public float moveSmoothTime = 0.1f;
+    [Tooltip("重力加速度（默认9.81即可）")] public float gravity = 9.81f;
 
     [Header("视角设置")]
     [Tooltip("鼠标水平灵敏度（左右旋转）")]
@@ -46,6 +45,8 @@ public class PlayerController : MonoBehaviour
         // 锁定鼠标到屏幕中心，隐藏光标（游戏时更沉浸）
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        currentMoveSpeed = baseMoveSpeed;
     }
 
     void Update()
@@ -87,8 +88,7 @@ public class PlayerController : MonoBehaviour
         moveDirection = transform.TransformDirection(moveDirection); // 把本地方向转世界方向
 
         // 3. 平滑移动（让移动更丝滑，无卡顿）
-        currentMoveVelocity = Vector3.SmoothDamp(currentMoveVelocity, moveDirection * moveSpeed, ref smoothMoveVelocity, moveSmoothTime);
-
+        currentMoveVelocity = Vector3.SmoothDamp(currentMoveVelocity, moveDirection * currentMoveSpeed, ref smoothMoveVelocity, moveSmoothTime);
         // 4. 重力处理（防止玩家浮空）
         if (characterController.isGrounded) // 只有落地时重置垂直速度
         {
